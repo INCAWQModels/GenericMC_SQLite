@@ -8,7 +8,7 @@ namespace MC
 {
     class SummarizeResults
     {
-        public static void write(string modelCommandLine)
+        public static void write(string modelCommandLine, resultsDatabase rd)
         {
             int iterations = MCParameters.maxTries;
 
@@ -20,12 +20,10 @@ namespace MC
             if (File.Exists(MCParameters.parameterValueListFile))
                 File.Delete(MCParameters.parameterValueListFile);
 
-            resultsDatabase rd = new resultsDatabase();
-            rd.makeCoefficientsTable();
-            rd.makeResultsTable();
-
             //switch doesn't seem to work so use a bunch of if statements, really not very elegant but ....
             //needs to be rethought as it is getting more than a little messy
+            //
+            // also need to find a way of connecting "rd" to an existing results database
             //
             if (MCParameters.model == 1) // running PERSiST 1.4
             {
@@ -113,7 +111,7 @@ namespace MC
 
             for (int i = 0; i < MCParameters.runsToOrganize; i++)
             {
-                runOnce(i, modelCommandLine, MCParameters.parameterArrayFileName);
+                runOnce(i, modelCommandLine, MCParameters.parameterArrayFileName, rd);
             }
 
             //write the coefficients for each model run
@@ -141,7 +139,7 @@ namespace MC
             }
         }
 
-        static void runOnce(int runNumber, string modelCommandLine, string outputFileName)
+        static void runOnce(int runNumber, string modelCommandLine, string outputFileName, resultsDatabase rd)
         {
             parameterSet p = new parameterSet(MCParameters.MCParFile);
 
@@ -149,7 +147,8 @@ namespace MC
             File.Copy(MCParameters.bestParSetFileName, MCParameters.MCParFile, true);
             p.writeToFileAsList(runNumber, MCParameters.parameterValueListFile);
 
-            resultsDatabase rd = new resultsDatabase();
+            //need to fix this so "rd" calls an existing database
+            //resultsDatabase rd = new resultsDatabase();
             rd.writeParameterSet(runNumber, p);
 
             InteractWithModel.RunModel(modelCommandLine);

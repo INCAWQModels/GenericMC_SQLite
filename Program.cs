@@ -45,14 +45,12 @@ namespace MC
             {
                 File.Delete("SuccessfulCompletion.txt");
             }
-
-            //check that it will be possible to write to a database
-            resultsDatabase MCResults = new resultsDatabase();
-
-            MCResults.cleanUp();
             
              InteractWithModel.WhatModel();
-
+            
+            //check that it will be possible to write to a database
+            resultsDatabase MCResults = new resultsDatabase();
+            
             //use the commandString to get all the arguments
             CommandString cs = new CommandString();
             //use runString to get the right set of output files written, "-size none" during runs
@@ -106,7 +104,7 @@ namespace MC
             MCResults.createParameterSensitivitySummaryTable();
             MCResults.writeCoefficientWeights();
 
-            SummarizeResults.write(runString);
+            SummarizeResults.write(runString,MCResults);
             SummarizeResults.noteSuccessfulCompletion();
             Console.ReadLine();
         }

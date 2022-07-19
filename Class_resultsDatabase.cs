@@ -19,37 +19,121 @@ namespace MC
         {
             cs = "URI=file:" + Directory.GetCurrentDirectory() + "\\mc.db";
             localConnection = new SQLiteConnection(cs);
+
+            cleanUp();
+            makeBaseTables();
+            makeViews();
+            makeCoefficientsTable();
+            makeResultsTable();
         }
 
         /// <summary>
         /// remove old tables in the database
         /// </summary>
-        public void cleanUp()
+        private void cleanUp()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) {Console.WriteLine(ex.Message); }
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
-                executeSQLCommand("DELETE * FROM ParNames");
-                executeSQLCommand("DELETE * FROM ParList");
-                executeSQLCommand("DELETE * FROM SortedParameters");
-                executeSQLCommand("DELETE * FROM CoefficientWeights");
-                executeSQLCommand("DELETE * FROM SortedParameters");
-                executeSQLCommand("DROP TABLE Coefficients");
-                executeSQLCommand("DROP TABLE Results");
-                executeSQLCommand("DROP TABLE IncaInputs");
-                executeSQLCommand("DROP TABLE Observations");
-                executeSQLCommand("DROP TABLE ParameterSensitivitySummary");
+                executeSQLCommand("DROP TABLE IF EXISTS ParNames");
+                executeSQLCommand("DROP TABLE IF EXISTS ParList");
+                executeSQLCommand("DROP TABLE IF EXISTS SortedParameters");
+                executeSQLCommand("DROP TABLE IF EXISTS CoefficientWeights");
+                executeSQLCommand("DROP TABLE IF EXISTS SortedParameters");
+                executeSQLCommand("DROP TABLE IF EXISTS Coefficients");
+                executeSQLCommand("DROP TABLE IF EXISTS Results");
+                executeSQLCommand("DROP TABLE IF EXISTS IncaInputs");
+                executeSQLCommand("DROP TABLE IF EXISTS Observations");
+                executeSQLCommand("DROP TABLE IF EXISTS ParameterSensitivitySummary");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
         }
 
+        private void makeBaseTables()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                createParNamesTable();
+                createParListTable();
+                createSortedParametersTable();
+                localConnection.Close();
+            }
+        }
+        private void createParNamesTable()
+        {
+            //assume we only get here if the connection state is open
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS ParNames ( " +
+                "ParID      INTEGER NOT NULL, " +
+                "ParName    TEXT)"
+            };
+            cmd.ExecuteNonQuery();
+        }
+        private void createParListTable()
+        {
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS ParList ( " +
+                "RunID          INTEGER NOT NULL, " +
+                "ParID          INTEGER NOT NULL, " +
+                "TextValue      TEXT, " +
+                "NumericValue   REAL)"
+            };
+            cmd.ExecuteNonQuery();
+        }
+        private void createSortedParametersTable()
+        {
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS SortedParameters ( " +
+                "ParID          INTEGER NOT NULL, " +
+                "ParameterValue REAL, " +
+                "RunID          INTEGER)"
+            };
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// create the views needed for the queries to run
+        /// </summary>
+        public void makeViews()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                createView_101ParStats();
+                createView_102SampledPars();
+                localConnection.Close();
+            }
+        }
+
+        private void createView_101ParStats()
+        {
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE VIEW IF NOT EXISTS ParStats_101 AS " +
+                "SELECT ParList.ParID, MIN(ParList.NumericValue) AS MinOfNumericValue, " +
+                "AVG(ParList.NumericValue) As AvgOfNumericValue, " +
+                "MAX(ParList.NumericValue) As MaxOfNumericValue " +
+                "FROM ParList GROUP BY ParList.ParID"
+            };
+            cmd.ExecuteNonQuery();
+        }
+        private void createView_102SampledPars()
+        {
+
+        }
         public void processParameterData()
         {
-            string path = Directory.GetCurrentDirectory();
-
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
             //only try to clean up if the connection is open
@@ -68,7 +152,7 @@ namespace MC
             };
         }
 
-        public void createParameterSensitivitySummaryTable()
+        internal void createParameterSensitivitySummaryTable()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -87,7 +171,7 @@ namespace MC
             Console.WriteLine("Text files are generated which can be used for subsequent analysis");
         }
 
-        public void makeResultsTable()
+        private void makeResultsTable()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -257,7 +341,7 @@ namespace MC
             localConnection.Close();
         }
 
-        public void makeCoefficientsTable()
+        private void makeCoefficientsTable()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
