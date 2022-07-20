@@ -41,7 +41,6 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS ParList");
                 executeSQLCommand("DROP TABLE IF EXISTS SortedParameters");
                 executeSQLCommand("DROP TABLE IF EXISTS CoefficientWeights");
-                executeSQLCommand("DROP TABLE IF EXISTS SortedParameters");
                 executeSQLCommand("DROP TABLE IF EXISTS Coefficients");
                 executeSQLCommand("DROP TABLE IF EXISTS Results");
                 executeSQLCommand("DROP TABLE IF EXISTS IncaInputs");
@@ -62,6 +61,7 @@ namespace MC
                 createParNamesTable();
                 createParListTable();
                 createSortedParametersTable();
+                createCoefficientWeightsTable();
                 localConnection.Close();
             }
         }
@@ -100,6 +100,17 @@ namespace MC
             cmd.ExecuteNonQuery();
         }
 
+        private void createCoefficientWeightsTable()
+        {
+            //assume we only get here if the connection state is open
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS CoefficientWeights ( " +
+                "CoefficientName    TEXT NOT NULL, " +
+                "CoefficientWeight  REAL NOT NULL)"
+            };
+            cmd.ExecuteNonQuery();
+        }
         /// <summary>
         /// create the views needed for the queries to run
         /// </summary>
@@ -110,17 +121,17 @@ namespace MC
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
-                createView_101ParStats();
-                createView_102SampledPars();
+                createView_ParStatsView();
+                createView_SampledParsView();
                 localConnection.Close();
             }
         }
 
-        private void createView_101ParStats()
+        private void createView_ParStatsView()
         {
             using var cmd = new SQLiteCommand(localConnection)
             {
-                CommandText = "CREATE VIEW IF NOT EXISTS ParStats_101 AS " +
+                CommandText = "CREATE VIEW IF NOT EXISTS ParStatsView AS " +
                 "SELECT ParList.ParID, MIN(ParList.NumericValue) AS MinOfNumericValue, " +
                 "AVG(ParList.NumericValue) As AvgOfNumericValue, " +
                 "MAX(ParList.NumericValue) As MaxOfNumericValue " +
@@ -128,12 +139,32 @@ namespace MC
             };
             cmd.ExecuteNonQuery();
         }
-        private void createView_102SampledPars()
+        private void createView_SampledParsView()
         {
-
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE VIEW IF NOT EXISTS SampledParsView AS " +
+                "SELECT ParStatsView.ParID, " +
+                "ParStatsView.MinOfNumericValue, " +
+                "ParStatsView.AvgOfNumericValue, " +
+                "ParStatsView.MaxOfNumericValue " +
+                "FROM ParStatsView " +
+                "WHERE ParStatsView.MinOfNumericValue <> ParStatsView.MaxOfNumericValue"
+            };
+            cmd.ExecuteNonQuery();
         }
         public void processParameterData()
         {
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
+                    "SELECT ParList.ParID, ParList.NumericValue, ParList.RunID " +
+                    "FROM ParList INNER JOIN SampledParsView ON ParList.ParID = SampledParsView.ParID " +
+                    "ORDER BY ParList.ParID, ParList.NumericValue"
+            };
+            cmd.ExecuteNonQuery();
+
+            /*
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
             //only try to clean up if the connection is open
@@ -141,15 +172,17 @@ namespace MC
             {
                 executeSQLCommand("INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
                     "SELECT ParList.ParID, ParList.NumericValue, ParList.RunID " +
-                    "FROM ParList INNER JOIN[102 Sampled Pars] ON ParList.ParID = [102 Sampled Pars].ParID " +
-                    "ORDER BY ParList.ParID, ParList.NumericValue;"
+                    "FROM ParList INNER JOIN SampledParsView ON ParList.ParID = SampledParsView.ParID " +
+                    "ORDER BY ParList.ParID, ParList.NumericValue"
                 );
+                Console.WriteLine("Insert into SortedParameters should have run");
                 localConnection.Close();
             }
             else { 
                 Console.WriteLine("Could not fix parameters");
                 Console.ReadLine();
             };
+            */
         }
 
         internal void createParameterSensitivitySummaryTable()
@@ -1079,12 +1112,6 @@ namespace MC
 
         private void writeDefaultCoefficients()
         { 
-            //open a connection
-            //string localConnectionString = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + MCParameters.databaseFileName + ";Uid=;Pwd=;";
-            //localConnection.ConnectionString = localConnectionString;
-            //try { localConnection.Open(); }
-            //catch (Exception ex) { Console.WriteLine(ex.Message); }
-            
             try
             {
                 using (StreamReader sr = new StreamReader(MCParameters.coefficientsSummaryFile))
@@ -1210,8 +1237,10 @@ namespace MC
         private void executeSQLCommand(string commandString)
         {
             SQLiteCommand tmp = new SQLiteCommand(commandString, localConnection);
+            //localConnection.Open();
             try { tmp.ExecuteNonQuery(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //localConnection.Close();
         }
 
         private void writeParameter(int runID, int ParID, string textValue)
@@ -1249,9 +1278,7 @@ namespace MC
         {
             Console.WriteLine("Writing parameter set {0}", runID);
             //probably need to open a connection string
-            string localConnectionString = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=" + MCParameters.databaseFileName + ";Uid=;Pwd=;";
-            localConnection.ConnectionString = localConnectionString;
-            try { localConnection.Open(); }
+           try { localConnection.Open(); }
             catch (Exception ex) { Console.WriteLine(ex.Message); }
 
             int m = 0;
