@@ -22,7 +22,7 @@ namespace MC
 
             cleanUp();
             makeBaseTables();
-            makeViews();
+            //makeViews();
             makeCoefficientsTable();
             makeResultsTable();
         }
@@ -46,6 +46,9 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS IncaInputs");
                 executeSQLCommand("DROP TABLE IF EXISTS Observations");
                 executeSQLCommand("DROP TABLE IF EXISTS ParameterSensitivitySummary");
+                executeSQLCommand("DROP TABLE IF EXISTS AllParRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS SampledParRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS ParameterIDRanges");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -93,6 +96,7 @@ namespace MC
             using var cmd = new SQLiteCommand(localConnection)
             {
                 CommandText = "CREATE TABLE IF NOT EXISTS SortedParameters ( " +
+                "ID             INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "ParID          INTEGER NOT NULL, " +
                 "ParameterValue REAL, " +
                 "RunID          INTEGER)"
@@ -121,17 +125,24 @@ namespace MC
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
-                createView_ParStatsView();
-                createView_SampledParsView();
+                createTableAllParRanges();
+                createTableSampledParsRanges();
                 localConnection.Close();
             }
         }
 
-        private void createView_ParStatsView()
+        private void createTableAllParRanges()
         {
+            using var testCmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "SELECT COUNT(*) FROM ParList"
+            };
+            string recs = testCmd.ExecuteScalar().ToString();
+            Console.WriteLine($"Number of records : {recs}");
+
             using var cmd = new SQLiteCommand(localConnection)
             {
-                CommandText = "CREATE VIEW IF NOT EXISTS ParStatsView AS " +
+                CommandText = "CREATE TABLE IF NOT EXISTS AllParRanges AS " +
                 "SELECT ParList.ParID, MIN(ParList.NumericValue) AS MinOfNumericValue, " +
                 "AVG(ParList.NumericValue) As AvgOfNumericValue, " +
                 "MAX(ParList.NumericValue) As MaxOfNumericValue " +
@@ -139,28 +150,53 @@ namespace MC
             };
             cmd.ExecuteNonQuery();
         }
-        private void createView_SampledParsView()
+        private void createTableSampledParsRanges()
         {
             using var cmd = new SQLiteCommand(localConnection)
             {
-                CommandText = "CREATE VIEW IF NOT EXISTS SampledParsView AS " +
-                "SELECT ParStatsView.ParID, " +
-                "ParStatsView.MinOfNumericValue, " +
-                "ParStatsView.AvgOfNumericValue, " +
-                "ParStatsView.MaxOfNumericValue " +
-                "FROM ParStatsView " +
-                "WHERE ParStatsView.MinOfNumericValue <> ParStatsView.MaxOfNumericValue"
+                CommandText = "CREATE TABLE IF NOT EXISTS SampledParRanges AS " +
+                "SELECT ParID, " +
+                "MinOfNumericValue, " +
+                "AvgOfNumericValue, " +
+                "MaxOfNumericValue " +
+                "FROM AllParRanges " +
+                "WHERE MinOfNumericValue <> MaxOfNumericValue"
             };
             cmd.ExecuteNonQuery();
         }
-        public void processParameterData()
+        
+        internal void createTableParameterIDRanges()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS ParameterIDRanges AS " +
+                    "SELECT ParID, " +
+                    "MIN(ID) As MinOfID, " +
+                    "MAX(ID) As MaxOfID, " +
+                    "MIN(ParameterValue) As MinOfParameterValue, " +
+                    "MAX(ParameterValue) As MaxOfParameterValue " +
+                    "FROM SortedParameters " +
+                    "GROUP BY ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create ParameterRangeID table");
+                Console.ReadLine();
+            };
+        }
+        internal void processParameterData()
         {
             /*
             using var cmd = new SQLiteCommand(localConnection)
             {
                 CommandText = "INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
                     "SELECT ParList.ParID, ParList.NumericValue, ParList.RunID " +
-                    "FROM ParList INNER JOIN SampledParsView ON ParList.ParID = SampledParsView.ParID " +
+                    "FROM ParList INNER JOIN SampledParRanges ON ParList.ParID = SampledParRanges.ParID " +
                     "ORDER BY ParList.ParID, ParList.NumericValue"
             };
             cmd.ExecuteNonQuery();
@@ -173,10 +209,9 @@ namespace MC
             {
                 executeSQLCommand("INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
                     "SELECT ParList.ParID, ParList.NumericValue, ParList.RunID " +
-                    "FROM ParList INNER JOIN SampledParsView ON ParList.ParID = SampledParsView.ParID " +
+                    "FROM ParList INNER JOIN SampledParRanges ON ParList.ParID = SampledParRanges.ParID " +
                     "ORDER BY ParList.ParID, ParList.NumericValue"
                 );
-                Console.WriteLine("Insert into SortedParameters should have run");
                 localConnection.Close();
             }
             else { 
@@ -185,6 +220,7 @@ namespace MC
             };
         }
 
+       
         internal void createParameterSensitivitySummaryTable()
         {
             try { localConnection.Open(); }
@@ -245,12 +281,12 @@ namespace MC
             string SQLString;
 
             SQLString = "CREATE TABLE Results (" +
-                "RUN        INTEGER," +
-                "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
+                "RUN            INTEGER," +
+                "RowNumber      INTEGER," +
+                "Reach          TEXT(255)," +
                 "TerrestrialInput   DOUBLE," +
-                "Flow       DOUBLE," +
-                "DateStamp  DATE)";
+                "Flow           DOUBLE," +
+                "DateStamp      DATE)";
             executeSQLCommand(SQLString);
         }
 

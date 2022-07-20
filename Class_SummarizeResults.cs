@@ -117,6 +117,15 @@ namespace MC
             //write the coefficients for each model run
             rd.writeCoefficients();
 
+            //get the summary information about whihc parameters are varying
+            rd.makeViews();
+
+            //identify sampled parameters
+            rd.processParameterData();
+
+            //set up the background for calculating KS statistics
+            rd.createTableParameterIDRanges();
+
             //write the results (at a later date)
             //rd.writeResults();
         }
