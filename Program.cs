@@ -103,12 +103,15 @@ namespace MC
             Console.WriteLine("About to process parameter data");
             MCResults.processParameterData();
             Console.WriteLine("Parameter data processed, about to create parameter sensitivity summary");
+           
+            /*
             MCResults.createParameterSensitivitySummaryTable();
             Console.WriteLine("Parameter sensitivity summary created about to write coefficient weights");
+            */
             MCResults.writeCoefficientWeights();
             Console.WriteLine("Coefficient weights written");
-
             SummarizeResults.write(runString,MCResults);
+
             SummarizeResults.noteSuccessfulCompletion();
             Console.ReadLine();
         }

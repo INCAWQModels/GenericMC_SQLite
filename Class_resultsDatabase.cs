@@ -155,6 +155,7 @@ namespace MC
         }
         public void processParameterData()
         {
+            /*
             using var cmd = new SQLiteCommand(localConnection)
             {
                 CommandText = "INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
@@ -163,8 +164,8 @@ namespace MC
                     "ORDER BY ParList.ParID, ParList.NumericValue"
             };
             cmd.ExecuteNonQuery();
-
-            /*
+            */
+          
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
             //only try to clean up if the connection is open
@@ -182,7 +183,6 @@ namespace MC
                 Console.WriteLine("Could not fix parameters");
                 Console.ReadLine();
             };
-            */
         }
 
         internal void createParameterSensitivitySummaryTable()
@@ -1240,6 +1240,7 @@ namespace MC
             //localConnection.Open();
             try { tmp.ExecuteNonQuery(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            
             //localConnection.Close();
         }
 
