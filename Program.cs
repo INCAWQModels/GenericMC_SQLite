@@ -105,7 +105,7 @@ namespace MC
             Console.WriteLine("Parameter sensitivity summary created about to write coefficient weights");
             */
             MCResults.writeCoefficientWeights();
-            Console.WriteLine("Coefficient weights written");
+            
             SummarizeResults.write(runString,MCResults);
 
             SummarizeResults.noteSuccessfulCompletion();

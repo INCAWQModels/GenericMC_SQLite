@@ -49,6 +49,9 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS AllParRanges");
                 executeSQLCommand("DROP TABLE IF EXISTS SampledParRanges");
                 executeSQLCommand("DROP TABLE IF EXISTS ParameterIDRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS ParametersWithOffsets");
+                executeSQLCommand("DROP TABLE IF EXISTS ObservedAndTheoreticalOffsets");
+                executeSQLCommand("DROP TABLE IF EXISTS TestStatistic");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -185,10 +188,91 @@ namespace MC
             }
             else
             {
-                Console.WriteLine("Could not create ParameterRangeID table");
+                Console.WriteLine("Could not create ParameterIDRanges table");
                 Console.ReadLine();
             };
         }
+
+        internal void calculateParametersWithOffsets()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS ParametersWithOffsets AS " +
+                    "SELECT ParameterIDRanges.ParID AS ParID, " +
+                    "SortedParameters.ID AS ID, " +
+                    "SortedParameters.ID - ParameterIDRanges.MinOfID AS Offset, " +
+                    "ParameterIDRanges.MaxOfID - ParameterIDRanges.MinOfID AS Runs, " +
+                    "SortedParameters.ParameterValue AS ParameterValue, " +
+                    "ParameterIDRanges.MinOfParameterValue AS MinOfParameterValue, " +
+                    "ParameterIDRanges.MaxOfParameterValue AS MaxOfParameterValue " +
+                    "FROM ParameterIDRanges " +
+                    "INNER JOIN SortedParameters " +
+                    "ON ParameterIDRanges.ParID = SortedParameters.ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create calculate parameters with offsets table");
+                Console.ReadLine();
+            };
+        }
+
+        internal void calculateObservedAndTheoreticalOffsets()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS ObservedAndTheoreticalOffsets AS " +
+                    "SELECT ParID, " +
+                    "1.0*ID AS ID, " +
+                    "1.0*Offset AS Offset, " +
+                    "MinOfParameterValue, " +
+                    "ParameterValue, " +
+                    "MaxOfParameterValue, " +
+                    "(1.0*Offset)/(1.0*Runs) As ObservedCDF, " +
+                    "(ParameterValue - MinOfParameterValue)/(MaxOfParameterValue - MinOfParameterValue) As TheoreticalCDF, " +
+                    "Runs " +
+                    "FROM ParametersWithOffsets"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create ObservedAndTheoreticalOffsets table");
+                Console.ReadLine();
+            };
+        }
+
+        internal void calculateTestStatistic()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS TestStatistic AS " +
+                   "SELECT ParID, " +
+                   "ObservedCDF, " +
+                   "TheoreticalCDF, " +
+                   "ABS(TheoreticalCDF - ObservedCDF) As Test, " +
+                   "RUNS " +
+                   "FROM ObservedAndTheoreticalOffsets"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create TestStatistic table");
+                Console.ReadLine();
+            };
+        }
+
         internal void processParameterData()
         {
             /*
