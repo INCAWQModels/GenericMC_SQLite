@@ -135,6 +135,19 @@ namespace MC
             //get test statistic for KS
             rd.calculateTestStatistic();
 
+            rd.makeKSDStatisticsPart1();
+            rd.makeKSDStatisticsPart2();
+
+            rd.makeKSDAndZ();
+
+            rd.makePTerm1();
+            rd.makePTerm2();
+            rd.makePTerm3();
+
+            rd.makeKSDZAndP();
+            rd.makeKSDZAndPWithNames();
+            rd.makeStatisticsSummary();
+
             //write the results (at a later date)
             //rd.writeResults();
         }

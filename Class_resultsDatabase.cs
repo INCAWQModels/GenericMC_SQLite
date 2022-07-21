@@ -52,6 +52,15 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS ParametersWithOffsets");
                 executeSQLCommand("DROP TABLE IF EXISTS ObservedAndTheoreticalOffsets");
                 executeSQLCommand("DROP TABLE IF EXISTS TestStatistic");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDStatisticsPart1");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDStatisticsPart2");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDAndZ");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm1");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm2");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm3");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDZAndP");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDZAndPWithNames");
+                executeSQLCommand("DROP TABLE IF EXISTS StatisticsSummary");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -273,6 +282,227 @@ namespace MC
             };
         }
 
+        internal void makeKSDStatisticsPart1()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS KSDStatisticsPart1 AS " +
+                   "SELECT ParID, " +
+                   "MAX(Test) AS D, " +
+                   "RUNS " +
+                   "FROM TestStatistic " +
+                   "GROUP BY ParID, Runs"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create KS D Statistic Part 1 table");
+                Console.ReadLine();
+            };
+        }
+        internal void makeKSDStatisticsPart2()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS KSDStatisticsPart2 AS " +
+                    "SELECT KSDStatisticsPart1.ParID As ParID, " +
+                    "KSDStatisticsPart1.D As D, " +
+                    "TestStatistic.TheoreticalCDF As xRange, " +
+                    "KSDStatisticsPart1.Runs As Runs, " +
+                    "SQRT(KSDStatisticsPart1.Runs * KSDStatisticsPart1.Runs/(2*KSDStatisticsPart1.Runs)) As RunTerm " +
+                    "FROM TestStatistic INNER JOIN KSDStatisticsPart1 " +
+                    "ON (KSDStatisticsPart1.D = TestStatistic.Test AND " +
+                    "TestStatistic.ParID = KSDStatisticsPart1.ParID)"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create KS D Statistic Part 2 table");
+                Console.ReadLine();
+            };
+        }
+
+        internal void makeKSDAndZ()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS KSDAndZ AS " +
+                    "SELECT ParID, " +
+                    "D, " +
+                    "xRange," +
+                    "D*(runTerm+0.12+0.11/runTerm) As z " +
+                    "FROM KSDStatisticsPart2"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create KS D And Z table");
+                Console.ReadLine();
+            };
+        }
+
+        internal void makePTerm1()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS pTerm1 AS " +
+                    "SELECT ParID,  " +
+                    "D, " +
+                    "xRange, " +
+                    "z, " +
+                    "EXP(-2*z*z) As pTerm1 " +
+                    "FROM KSDAndZ"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table pTerm1");
+                Console.ReadLine();
+            };
+        }
+        internal void makePTerm2()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS pTerm2 AS " +
+                    "SELECT ParID, " +
+                    "D, " +
+                    "xRange, " +
+                    "z, " +
+                    "pTerm1, " +
+                    "-1.0*EXP(-2*4*z*z) + pTerm1 AS pTerm2 " +
+                    "FROM pTerm1"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table pTerm1");
+                Console.ReadLine();
+            };
+        }
+        internal void makePTerm3()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS pTerm3 AS " +
+                    "SELECT ParID, " +
+                    "D, " +
+                    "xRange, " +
+                    "Z, " +
+                    "pTerm1, " +
+                    "pTerm2, " +
+                    "EXP(-18.0*z*z)+pTerm2 As pTerm3 " +
+                    "FROM pTerm2"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table pTerm3");
+                Console.ReadLine();
+            };
+        }
+        internal void makeKSDZAndP()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS KSDZAndP AS " +
+                    "SELECT ParID, " +
+                    "D, " +
+                    "xRange, " +
+                    "pTerm1, " +
+                    "pTerm2, " +
+                    "pTerm3, " +
+                    "-1.0*EXP(-32*z*z)+pTerm3 AS p " +
+                    "FROM pTerm3"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table KS D Z and p");
+                Console.ReadLine();
+            };
+        }
+        internal void makeKSDZAndPWithNames()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS KSDZAndPWithNames AS " +
+                    "SELECT ParNames.parName As ParName, " +
+                    "KSDZAndP.ParID AS ParID, " +
+                    "KSDZAndP.D AS D, " +
+                    "KSDZAndP.xRange AS xRange, " +
+                    "KSDZandP.z AS z, " +
+                    "KSDZAndP.p AS p " +
+                    "FROM ParNames INNER JOIN KSDZAndP " +
+                    "ON ParNames.ParID = KSDZAndP.ParID " +
+                    "ORDER BY KSDZAndP.ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table KS D Z and p with names");
+                Console.ReadLine();
+            };
+        }
+        internal void makeStatisticsSummary()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS StatisticsSummary AS " +
+                   "SELECT KSDZAndPWithNames.ParName AS ParName, " +
+                   "KSDZAndPWithNames.ParID AS ParID, " +
+                   "KSDZAndPWithNames.D AS D, " +
+                   "SampledPars.MinOfNumericValue AS MinOfNumericValue, " +
+                   "SampledPars.MaxOfNumericValue AS MaxOfNumericValue, " +
+                   "KSDZAndPWithNames.xRange AS xRange, " +
+                   "KSDZAndPWithNames.z AS z, " +
+                   "KSDZAndPWithNames.p AS p " +
+                   "FROM SampledPars INNER JOIN KSDZAndPWithNames " +
+                   "ON SampledPars.ParID = KSDZAndPWithNames.ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create table KS D Z and p with names");
+                Console.ReadLine();
+            };
+        }
         internal void processParameterData()
         {
             /*
