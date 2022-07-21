@@ -411,7 +411,7 @@ namespace MC
                     "SELECT ParID, " +
                     "D, " +
                     "xRange, " +
-                    "Z, " +
+                    "z, " +
                     "pTerm1, " +
                     "pTerm2, " +
                     "EXP(-18.0*z*z)+pTerm2 As pTerm3 " +
@@ -436,6 +436,7 @@ namespace MC
                     "SELECT ParID, " +
                     "D, " +
                     "xRange, " +
+                    "z, " +
                     "pTerm1, " +
                     "pTerm2, " +
                     "pTerm3, " +
@@ -487,13 +488,13 @@ namespace MC
                    "SELECT KSDZAndPWithNames.ParName AS ParName, " +
                    "KSDZAndPWithNames.ParID AS ParID, " +
                    "KSDZAndPWithNames.D AS D, " +
-                   "SampledPars.MinOfNumericValue AS MinOfNumericValue, " +
-                   "SampledPars.MaxOfNumericValue AS MaxOfNumericValue, " +
+                   "SampledParRanges.MinOfNumericValue AS MinOfNumericValue, " +
+                   "SampledParRanges.MaxOfNumericValue AS MaxOfNumericValue, " +
                    "KSDZAndPWithNames.xRange AS xRange, " +
                    "KSDZAndPWithNames.z AS z, " +
                    "KSDZAndPWithNames.p AS p " +
-                   "FROM SampledPars INNER JOIN KSDZAndPWithNames " +
-                   "ON SampledPars.ParID = KSDZAndPWithNames.ParID"
+                   "FROM SampledParRanges INNER JOIN KSDZAndPWithNames " +
+                   "ON SampledParRanges.ParID = KSDZAndPWithNames.ParID"
                 );
                 localConnection.Close();
             }
