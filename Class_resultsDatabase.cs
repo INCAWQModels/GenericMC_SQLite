@@ -596,25 +596,26 @@ namespace MC
             string SQLString;
 
             SQLString = "CREATE TABLE Results (" +
-                "RUN            INTEGER," +
-                "RowNumber      INTEGER," +
-                "Reach          TEXT(255)," +
-                "TerrestrialInput   DOUBLE," +
-                "Flow           DOUBLE," +
-                "DateStamp      DATE)";
+                "RUN                INTEGER," +
+                "RowNumber          INTEGER," +
+                "Reach              TEXT," +
+                "TerrestrialInput   REAL," +
+                "Flow               REAL," +
+                "DateStamp          TEXT)";
             executeSQLCommand(SQLString);
         }
 
+        //need to come back to this and put in the appropriate columns
         private void makeINCA_CResultsTable()
         {
             string SQLString;
 
             SQLString = "CREATE TABLE Results (" +
-                "RUN                INTEGER," +
-                "RowNumber          INTEGER," +
-                "Reach              TEXT(255)," +
-                "Flow               DOUBLE," +
-                "DateStamp          DATE)";
+                "RUN                    INTEGER," +
+                "RowNumber              INTEGER," +
+                "Reach                  TEXT," +
+                "Flow                   REAL," +
+                "DateStamp              TEXT)";
             executeSQLCommand(SQLString);
         }
 
@@ -625,9 +626,9 @@ namespace MC
             SQLString = "CREATE TABLE Results (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
+                "Reach      TEXT," +
                 "Flow       DOUBLE," +
-                "DateStamp  DATE)";
+                "DateStamp  TEXT)";
             executeSQLCommand(SQLString);
         }
 
@@ -636,14 +637,14 @@ namespace MC
             string SQLString;
 
             SQLString = "CREATE TABLE INCAInputs (" +
-                "FileName       TEXT(255)," +
+                "FileName       TEXT," +
                 "RUN            INTEGER," +
                 "RowNumber      INTEGER,"+
-                "SMD            DOUBLE," +
-                "HER            DOUBLE," +
-                "T              DOUBLE," +
-                "P              DOUBLE," +
-                "DateStamp      DATE)";
+                "SMD            REAL," +
+                "HER            REAL," +
+                "T              REAL," +
+                "P              REAL," +
+                "DateStamp      TEXT)";
             executeSQLCommand(SQLString);
         }
 
@@ -652,7 +653,7 @@ namespace MC
             string SQLString;
 
             SQLString = "CREATE TABLE Results (" +
-                "FileName       TEXT(255)," +
+                "FileName       TEXT," +
                 "RUN            INTEGER," +
                 "RowNumber      INTEGER," +
                 "FLOW           DOUBLE," +
@@ -667,7 +668,7 @@ namespace MC
                 "PERIMETER      DOUBLE," +
                 "RADIUS         DOUBLE," +
                 "RESIDENCETIME  DOUBLE," +
-                "DateStamp      DATE)";
+                "DateStamp      STRING)";
             executeSQLCommand(SQLString);
         }
 
@@ -778,13 +779,13 @@ namespace MC
             SQLString = "CREATE TABLE Coefficients (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
-                "Parameter  TEXT(255)," +
-                "R2         DOUBLE," +
-                "NS         DOUBLE," +
-                "RMSE       DOUBLE," +
-                "RE         DOUBLE," +
-                "DateStamp  DATE)";
+                "Reach      TEXT," +
+                "Parameter  TEXT," +
+                "R2         REAL," +
+                "NS         REAL," +
+                "RMSE       REAL," +
+                "RE         REAL," +
+                "DateStamp  STRING)";
             executeSQLCommand(SQLString);
         }
 
@@ -800,15 +801,15 @@ namespace MC
             SQLString = "CREATE TABLE Coefficients (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
-                "Parameter  TEXT(255)," +
-                "R2         DOUBLE," +
-                "NS         DOUBLE," +
-                "logNS      DOUBLE," +
-                "AD         DOUBLE," +
-                "VAR        DOUBLE," +
-                "KGE        DOUBLE," +
-                "DateStamp  DATE)";
+                "Reach      TEXT," +
+                "Parameter  TEXT," +
+                "R2         REAL," +
+                "NS         REAL," +
+                "logNS      REAL," +
+                "AD         REAL," +
+                "VAR        REAL," +
+                "KGE        REAL," +
+                "DateStamp  TEXT)";
             executeSQLCommand(SQLString);
         }
 
@@ -819,20 +820,20 @@ namespace MC
             SQLString = "CREATE TABLE Coefficients (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
-                "Parameter  TEXT(255)," +
-                "R2         DOUBLE," +
-                "NS         DOUBLE," +
-                "logNS      DOUBLE, " +
-                "RMSE       DOUBLE," +
-                "AD         DOUBLE," +
-                "VR         DOUBLE, "+
-                "KGE        DOUBLE, " +
-                "CAT_B      DOUBLE,"+
-                "CAT_C      DOUBLE,"+   
-                "CAT_CA     DOUBLE,"+
-                "CAT_CB     DOUBLE,"+
-                "DateStamp  DATE)";
+                "Reach      TEXT," +
+                "Parameter  TEXT," +
+                "R2         REAL," +
+                "NS         REAL," +
+                "logNS      REAL, " +
+                "RMSE       REAL," +
+                "AD         REAL," +
+                "VR         REAL, "+
+                "KGE        REAL, " +
+                "CAT_B      REAL,"+
+                "CAT_C      REAL,"+   
+                "CAT_CA     REAL,"+
+                "CAT_CB     REAL,"+
+                "DateStamp  TEXT)";
             executeSQLCommand(SQLString);
         }
         
@@ -843,14 +844,14 @@ namespace MC
             SQLString = "CREATE TABLE Coefficients (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
-                "Parameter  TEXT(255)," +
-                "R2         DOUBLE," +
-                "NS         DOUBLE," +
-                "RMSE       DOUBLE," +
-                "RE         DOUBLE," +
-                "VR         DOUBLE," +
-                "DateStamp  DATE)";
+                "Reach      TEXT," +
+                "Parameter  TEXT," +
+                "R2         REAL," +
+                "NS         REAL," +
+                "RMSE       REAL," +
+                "RE         REAL," +
+                "VR         REAL," +
+                "DateStamp  TEXT)";
             executeSQLCommand(SQLString);
         }
 
@@ -861,7 +862,7 @@ namespace MC
             SQLString = "CREATE TABLE Coefficients (" +
                 "RUN        INTEGER," +
                 "RowNumber  INTEGER," +
-                "Reach      TEXT(255)," +
+                "Reach      TEXT," +
                 "R2         DOUBLE," +
                 "NS         DOUBLE," +
                 "LOG_NS     DOUBLE," +
@@ -920,8 +921,11 @@ namespace MC
             {
                 case 1: //PERSiST 1.4
                 case 8: //PERSiST 1.6
-                    //writeINCAResultsFromPERSiST();
-                    //writePERSiSTResults();
+                case 10: //PERSiST 2.x
+                    writeINCAResultsFromPERSiST();
+                    writePERSiSTResults();
+                    writePERSiSTResultsToDatabase();
+                    writeINCAResultsFromPERSiSTToDatabase();
                     break;
                 case 2: //INCA-C
                     notYetImplemented();

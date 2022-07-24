@@ -148,8 +148,8 @@ namespace MC
             rd.makeKSDZAndPWithNames();
             rd.makeStatisticsSummary();
 
-            //write the results (at a later date)
-            //rd.writeResults();
+            //write the results
+            rd.writeResults();
         }
 
         static void getNumberOfRunsToOrganize()
