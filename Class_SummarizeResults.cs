@@ -123,6 +123,12 @@ namespace MC
             //identify sampled parameters
             rd.processParameterData();
 
+            //set temp min IDs
+            rd.populatetmpMinID();
+
+            //update tank IDs
+            rd.updateRankID();
+
             //set up the background for calculating KS statistics
             rd.createTableParameterIDRanges();
 
@@ -149,7 +155,10 @@ namespace MC
             rd.makeStatisticsSummary();
 
             //write the results
-            rd.writeResults();
+            //rd.writeResults();
+
+            //clean up temporary tables
+            //rd.cleanUpTemporaryTables();
         }
 
         static void getNumberOfRunsToOrganize()

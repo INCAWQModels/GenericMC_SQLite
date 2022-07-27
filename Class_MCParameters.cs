@@ -6,11 +6,11 @@ using System.Text;
 
 namespace MC
 {
-    public static class MCParameters
+    internal static class MCParameters
     {
-        public static int model = 1;
+        internal static int model = 1;
         
-        public enum modelID : int
+        internal enum modelID : int
         {
             persist14   = 1,
             inca_c_1x   = 2,
@@ -26,7 +26,7 @@ namespace MC
             inca_N_1x   = 12
         }
         
-        public static string modelName()
+        internal static string modelName()
         {
             string modelName;
             //InteractWithModel.availableModels.Find(i => i.p )
@@ -75,78 +75,80 @@ namespace MC
             return modelName;
         }
 
-        public static int persistModelVersionID = 1;
+        internal static int persistModelVersionID = 1;
 
-        public static char separatorChar = ',';
-        public static char dot = '.';
-        public static string minParFileStub = "_min.par";
-        public static string maxParFileStub = "_max.par";
-        public static string minParFile() { return modelName() + minParFileStub; }
-        public static string maxParFile() { return modelName() + maxParFileStub; }
+        internal static char separatorChar = ',';
+        internal static char dot = '.';
+        internal static string minParFileStub = "_min.par";
+        internal static string maxParFileStub = "_max.par";
+        internal static string minParFile() { return modelName() + minParFileStub; }
+        internal static string maxParFile() { return modelName() + maxParFileStub; }
 
-        public static string MCParFile = "mc.par";
-        public static string bestParSetFileName = "mc.par"; // need this for model initialization
+        internal static string MCParFile = "mc.par";
+        internal static string bestParSetFileName = "mc.par"; // need this for model initialization
 
-        public static string resultFileNameStub ="results";
-        public static string INCAFileNameStub="INCA_";
-        public static string PERSiSTOutputFileName = "PERSiST_streamflow.csv";
-        public static string DefaultINCAOutputFileName = "INCA_out.dsd";
+        internal static string INCASummaryFile = "INCASummary.txt";
+        internal static string resultFileNameStub ="results";
+        internal static string INCAFileNameStub="INCA_";
+        internal static string PERSiSTOutputFileName = "PERSiST_streamflow.csv";
+        internal static string DefaultINCAOutputFileName = "INCA_out.dsd";
+        internal static string PERSiSTOutputFile = "PERSiSTResults.txt";
 
         //need to initialize observed file name to something
-        public static string observedFileName = "obs.obs";
+        internal static string observedFileName = "obs.obs";
 
         //change this back to small after the ET Harvest simulations
-        public static string outputSize = "medium";
+        internal static string outputSize = "medium";
 
-        public static string coefficientsFile = "PERSiST_Errors.csv";
-        public static string coefficientsSummaryFile = "coefficients.txt";
-        public static string coefficientsWeightFile = "coefficientWeights.txt";
-        public static string INCAOutputFile = "INCAOut";
-        public static string LogFileBestPerformance = "logBestPerformance.txt";
+        internal static string coefficientsFile = "PERSiST_Errors.csv";
+        internal static string coefficientsSummaryFile = "coefficients.txt";
+        internal static string coefficientsWeightFile = "coefficientWeights.txt";
+        internal static string INCAOutputFile = "INCAOut";
+        internal static string LogFileBestPerformance = "logBestPerformance.txt";
 
-        public static string parameterNameListFile = "parNames.csv";
-        public static string parameterValueListFile = "parList.csv";
-        public static string parameterArrayFileName = "pars.csv";
+        internal static string parameterNameListFile = "parNames.csv";
+        internal static string parameterValueListFile = "parList.csv";
+        internal static string parameterArrayFileName = "pars.csv";
 
-        public static double defaultScalingFactorForJump = 0.1;
-        public static double testPerformanceAdjustmentFactor = 1;
+        internal static double defaultScalingFactorForJump = 0.1;
+        internal static double testPerformanceAdjustmentFactor = 1;
 
-        public static long maxJumps = 2500;
-        public static int maxUnsuccessfulJumps = 50;
+        internal static long maxJumps = 2500;
+        internal static int maxUnsuccessfulJumps = 50;
 
         //use for storing the best performance ID
-        public static long bestPerformanceID = 0;
+        internal static long bestPerformanceID = 0;
         //use for storing the number of times 
-        public static int freshStarts = 0;
+        internal static int freshStarts = 0;
 
-        public static int maxTries = 300;
+        internal static int maxTries = 300;
 
         //these need to be made user-definable
-        public static int numberOfLandUses = 6;
-        public static int numberOfReaches = 2;
-        public static int numberOfBoxes = 3;
-        public static int numberOfSedimentClasses = 5;
-        public static int numberOfContaminants = 1;
+        internal static int numberOfLandUses = 6;
+        internal static int numberOfReaches = 2;
+        internal static int numberOfBoxes = 3;
+        internal static int numberOfSedimentClasses = 5;
+        internal static int numberOfContaminants = 1;
 
-        public static int GLUE = 0;
+        internal static int GLUE = 0;
 
-        public static int coefficientNumber = 2;
+        internal static int coefficientNumber = 2;
 
-        public static int runsToOrganize = 500;
+        internal static int runsToOrganize = 500;
 
-        public static double testVal = -1e10; //target test value for starting MC loops
+        internal static double testVal = -1e10; //target test value for starting MC loops
 
-        public static int splitsToUse = 20; //number of groups to break up output
+        internal static int splitsToUse = 20; //number of groups to break up output
 
-        public static double[] seriesWeights;
+        internal static double[] seriesWeights;
 
-        public static double[] coefficientsWeights;
+        internal static double[] coefficientsWeights;
 
-        public static ArrayList listOfCatchmentNames = new ArrayList();   //list of catchments for PERSiST
+        internal static ArrayList listOfCatchmentNames = new ArrayList();   //list of catchments for PERSiST
 
-        public static ArrayList listOfContaminants = new ArrayList(); // list of contaminant names for INCA-Tox
+        internal static ArrayList listOfContaminants = new ArrayList(); // list of contaminant names for INCA-Tox
 
         //parameters for database access
-        public static string databaseFileName = ".\\mc.accdb";
+        internal static string databaseFileName = ".\\mc.accdb";
     }
 }

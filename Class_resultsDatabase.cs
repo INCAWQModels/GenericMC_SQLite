@@ -22,6 +22,7 @@ namespace MC
 
             cleanUp();
             makeBaseTables();
+            maketemporaryTables();
             //makeViews();
             makeCoefficientsTable();
             makeResultsTable();
@@ -61,11 +62,41 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS KSDZAndP");
                 executeSQLCommand("DROP TABLE IF EXISTS KSDZAndPWithNames");
                 executeSQLCommand("DROP TABLE IF EXISTS StatisticsSummary");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
         }
 
+        internal void cleanUpTemporaryTables()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("DROP TABLE IF EXISTS ParameterSensitivitySummary");
+                executeSQLCommand("DROP TABLE IF EXISTS AllParRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS SampledParRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS ParameterIDRanges");
+                executeSQLCommand("DROP TABLE IF EXISTS ParametersWithOffsets");
+                executeSQLCommand("DROP TABLE IF EXISTS ObservedAndTheoreticalOffsets");
+                executeSQLCommand("DROP TABLE IF EXISTS TestStatistic");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDStatisticsPart1");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDStatisticsPart2");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDAndZ");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm1");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm2");
+                executeSQLCommand("DROP TABLE IF EXISTS pTerm3");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDZAndP");
+                executeSQLCommand("DROP TABLE IF EXISTS KSDZAndPWithNames");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
+                localConnection.Close();
+            }
+            else { Console.WriteLine("Could not clean up database"); };
+        }
         private void makeBaseTables()
         {
             try { localConnection.Open(); }
@@ -109,6 +140,7 @@ namespace MC
             {
                 CommandText = "CREATE TABLE IF NOT EXISTS SortedParameters ( " +
                 "ID             INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "RankID         INTEGER DEFAULT 0, " +
                 "ParID          INTEGER NOT NULL, " +
                 "ParameterValue REAL, " +
                 "RunID          INTEGER)"
@@ -130,6 +162,45 @@ namespace MC
         /// <summary>
         /// create the views needed for the queries to run
         /// </summary>
+        private void maketemporaryTables()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                createtmpMinIDTable();
+                createtmpSortedParametersForCorrelationsTable();
+                localConnection.Close();
+            }
+        }
+
+        private void createtmpMinIDTable()
+        {
+            //assume we only get here if the connection state is open
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS tmpMinID " +
+                "(ParID INTEGER, " + 
+                "MinOfID INTEGER)"
+            };
+            cmd.ExecuteNonQuery();
+        }
+
+        private void createtmpSortedParametersForCorrelationsTable()
+        {
+            //assume we only get here if the connection state is open
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS createtmpSortedParametersForCorrelationsTable " +
+                "(ID INTEGER PRIMARY KEY ASC, " +
+                "ParID INTEGER, " +
+                "RunID INTEGER, " +
+                "ParameterValue REAL, " +
+                "RankID INTEGER) "
+            };
+            cmd.ExecuteNonQuery();
+        }
         public void makeViews()
         {
             try { localConnection.Open(); }
@@ -505,18 +576,7 @@ namespace MC
             };
         }
         internal void processParameterData()
-        {
-            /*
-            using var cmd = new SQLiteCommand(localConnection)
-            {
-                CommandText = "INSERT INTO SortedParameters ( ParID, ParameterValue, RunID )" +
-                    "SELECT ParList.ParID, ParList.NumericValue, ParList.RunID " +
-                    "FROM ParList INNER JOIN SampledParRanges ON ParList.ParID = SampledParRanges.ParID " +
-                    "ORDER BY ParList.ParID, ParList.NumericValue"
-            };
-            cmd.ExecuteNonQuery();
-            */
-          
+        { 
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
             //only try to clean up if the connection is open
@@ -535,7 +595,58 @@ namespace MC
             };
         }
 
-       
+
+        internal void populatetmpMinID()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("INSERT INTO tmpMinID " +
+                    "(ParID, MinOfID) " +
+                    "SELECT ParID, Min(ID) " +
+                    "FROM SortedParameters " +
+                    "GROUP BY ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not fix parameters");
+                Console.ReadLine();
+            };
+        }
+
+        /// <summary>
+        /// Updating ranks using a correlated subquery needs to be split into two separate queries
+        /// </summary>
+        internal void updateRankID()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("UPDATE SortedParameters " +
+                    "SET RankID = " +
+                    "(SELECT tmpMinID.MinOfID " +
+                    "FROM tmpMinID "+
+                    "WHERE SortedParameters.ParID = tmpMinID.ParID) "
+                );
+                executeSQLCommand("UPDATE SortedParameters " +
+                    "SET RankID = ID - RankID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not update Rank IDs");
+                Console.ReadLine();
+            };
+        }
+
+        
         internal void createParameterSensitivitySummaryTable()
         {
             try { localConnection.Open(); }
@@ -983,15 +1094,16 @@ namespace MC
                                 fields[0] + ", " +        //RUN
                                 fields[1] + ", '" +        //RowNumber
                                 reach + "', " +          //Reach
-                                fields[2] + "," +         //Diffuse Inputs from land phase
-                                fields[3] + ", DATE())";
+                                fields[3] + "," +         //Diffuse Inputs from land phase
+                                fields[4] + 
+                                ", DATE())";
                         }
-
-                        using (StreamWriter SQLCheck = new StreamWriter("SQLCheck.txt"))
+                        /*
+                        using (StreamWriter SQLCheck = new StreamWriter("AppendPERSiSTResultsSQLCheck.txt",true))
                         {
                             SQLCheck.WriteLine(SQLString);
                         }
-                        
+                        */
                         SQLiteCommand tmp = new SQLiteCommand(SQLString, localConnection);
                         try { tmp.ExecuteNonQuery(); }
                         catch (Exception ex) { Console.WriteLine(ex.Message); }
@@ -1003,8 +1115,7 @@ namespace MC
 
         private void writePERSiSTResults()
         {
-            string PERSiSTOutputFile = "PERSiSTResults.txt";
-            File.Create(PERSiSTOutputFile).Dispose();
+            File.Create(MCParameters.PERSiSTOutputFile).Dispose();
 
             for (var i = 0; i < MCParameters.splitsToUse; i++)
             {
@@ -1035,7 +1146,7 @@ namespace MC
                             double tst;
                             try {
                                 tst = Convert.ToDouble(fields[2]);
-                                using (FileStream fs = new FileStream(PERSiSTOutputFile, FileMode.Append, FileAccess.Write))
+                                using (FileStream fs = new FileStream(MCParameters.PERSiSTOutputFile, FileMode.Append, FileAccess.Write))
                                 using (StreamWriter sw = new StreamWriter(fs))
                                 { sw.WriteLine(resultString); }
                                 }
@@ -1046,7 +1157,7 @@ namespace MC
             }
         }
 
-        //this is really slow, needs to be refactored before it can be useful
+        //this is really slow, should be refactored using transactions
         private void writeINCAResultsFromPERSiSTToDatabase()
         {
             //assume that each candidate INCA inputs file has been generated in the current model run
@@ -1094,10 +1205,12 @@ namespace MC
             }
         }
 
+        /// <summary>
+        /// Create a text file containing all INCA input data sets generated during the run
+        /// </summary>
         private void writeINCAResultsFromPERSiST()
         {
-            string INCASummaryFile = "INCASummary.txt";
-            File.Create(INCASummaryFile).Dispose();
+            File.Create(MCParameters.INCASummaryFile).Dispose();
 
             //assume that each candidate INCA inputs file has been generated in the current model run
             //this should work as all candidate input files are cleaned up earlier
@@ -1115,14 +1228,14 @@ namespace MC
                         try
                         {
                             resultString = f + ", " +
-                                fields[0] + "," +        //Run
-                                fields[1] + "," +       //RowNumber
-                                fields[2] + "," +       //SMD
-                                fields[3] + "," +       //HER
-                                fields[4] + "," +       //T
-                                fields[5];             //P
+                                fields[0] + "," +           //Run
+                                fields[1] + "," +           //RowNumber
+                                fields[2] + "," +           //SMD
+                                fields[3] + "," +           //HER
+                                fields[4] + "," +           //T
+                                fields[5];                  //P
 
-                            using (FileStream fs = new FileStream(INCASummaryFile, FileMode.Append, FileAccess.Write))
+                            using (FileStream fs = new FileStream(MCParameters.INCASummaryFile, FileMode.Append, FileAccess.Write))
                             using (StreamWriter sw = new StreamWriter(fs))
                             { sw.WriteLine(resultString); }
                         }
@@ -1137,6 +1250,9 @@ namespace MC
 
         //take the summary file of coefficients and write them all to the database (note - may want to change this later
         //so as to write one set of coefficients at a time
+        /// <summary>
+        /// Write the coefficients used to assess model performance
+        /// </summary>
         public void writeCoefficients()
         {
             try { localConnection.Open(); }
