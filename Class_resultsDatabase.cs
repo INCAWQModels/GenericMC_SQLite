@@ -65,7 +65,7 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
-                executeSQLCommand("DROP TABLE IF EXISTS tmpParameterValueAverages");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpAverageParameterValue");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -99,7 +99,7 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
-                executeSQLCommand("DROP TABLE IF EXISTS tmpParameterValueAverages");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpAverageParameterValue");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not remove temporary tables"); };
@@ -214,22 +214,27 @@ namespace MC
         /// </summary>
         private void createtmpCorrelationPrecursorTables()
         {
-            //assume we only get here if the connection state is open
-            using var cmd = new SQLiteCommand(localConnection)
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
             {
-                CommandText = "CREATE TABLE IF NOT EXISTS tmpCorrelationPrecursor " +
+                //assume we only get here if the connection state is open
+                using var cmd = new SQLiteCommand(localConnection)
+                {
+                    CommandText = "CREATE TABLE IF NOT EXISTS tmpCorrelationPrecursor " +
                     "(ParX  INTEGER, " +
                     "ParY   INTEGER, " +
-                    "X      REAL, "  +
-                    "Y      REAL, "     +
-                    "RX     INTEGER, "  +
-                    "RY     INTEGER)"   
-            };
-            cmd.ExecuteNonQuery();
+                    "X      REAL, " +
+                    "Y      REAL, " +
+                    "RX     INTEGER, " +
+                    "RY     INTEGER)"
+                };
+                cmd.ExecuteNonQuery();
 
-            using var cmd1 = new SQLiteCommand(localConnection)
-            {
-                CommandText = "INSERT INTO tmpCorrelationPrecursor " +
+                using var cmd1 = new SQLiteCommand(localConnection)
+                {
+                    CommandText = "INSERT INTO tmpCorrelationPrecursor " +
                     "(ParX, ParY, X, Y, RX, RY) " +
                     "SELECT X.ParID, " +
                     "Y.ParID, " +
@@ -241,8 +246,13 @@ namespace MC
                     "SortedParameters AS Y " +
                     "WHERE X.RunID = Y.RunID " +
                     "AND Y.ParID > X.ParID "
-            };
-            cmd1.ExecuteNonQuery();
+                };
+                cmd1.ExecuteNonQuery();
+            }
+            else
+            {
+                Console.WriteLine("Could not create temproary correlation precursor tables");
+            }
         }
 
         public void makeViews()
