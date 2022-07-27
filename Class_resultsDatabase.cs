@@ -64,11 +64,16 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS StatisticsSummary");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpParameterValueAverages");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
         }
 
+        /// <summary>
+        /// Remove temproary tables
+        /// </summary>
         internal void cleanUpTemporaryTables()
         {
             try { localConnection.Open(); }
@@ -93,9 +98,11 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS KSDZAndPWithNames");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpMinID");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
+                executeSQLCommand("DROP TABLE IF EXISTS tmpParameterValueAverages");
                 localConnection.Close();
             }
-            else { Console.WriteLine("Could not clean up database"); };
+            else { Console.WriteLine("Could not remove temporary tables"); };
         }
         private void makeBaseTables()
         {
@@ -187,7 +194,7 @@ namespace MC
             cmd.ExecuteNonQuery();
         }
 
-        private void createtmpSortedParametersForCorrelationsTable()
+        internal void createtmpSortedParametersForCorrelationsTable()
         {
             //assume we only get here if the connection state is open
             using var cmd = new SQLiteCommand(localConnection)
@@ -201,6 +208,43 @@ namespace MC
             };
             cmd.ExecuteNonQuery();
         }
+
+        /// <summary>
+        /// create and populate temporary table for correlations
+        /// </summary>
+        private void createtmpCorrelationPrecursorTables()
+        {
+            //assume we only get here if the connection state is open
+            using var cmd = new SQLiteCommand(localConnection)
+            {
+                CommandText = "CREATE TABLE IF NOT EXISTS tmpCorrelationPrecursor " +
+                    "(ParX  INTEGER, " +
+                    "ParY   INTEGER, " +
+                    "X      REAL, "  +
+                    "Y      REAL, "     +
+                    "RX     INTEGER, "  +
+                    "RY     INTEGER)"   
+            };
+            cmd.ExecuteNonQuery();
+
+            using var cmd1 = new SQLiteCommand(localConnection)
+            {
+                CommandText = "INSERT INTO tmpCorrelationPrecursor " +
+                    "(ParX, ParY, X, Y, RX, RY) " +
+                    "SELECT X.ParID, " +
+                    "Y.ParID, " +
+                    "X.ParameterValue, " +
+                    "Y.ParameterValue, " +
+                    "X.RankID, " +
+                    "Y.RankID " +
+                    "FROM SortedParameters AS X, " +
+                    "SortedParameters AS Y " +
+                    "WHERE X.RunID = Y.RunID " +
+                    "AND Y.ParID > X.ParID "
+            };
+            cmd1.ExecuteNonQuery();
+        }
+
         public void makeViews()
         {
             try { localConnection.Open(); }
@@ -329,7 +373,23 @@ namespace MC
             };
         }
 
-        internal void calculateTestStatistic()
+        /// <summary>
+        /// Generate KS statistics
+        /// </summary>
+        internal void calculateKSStatistics()
+        {
+            calculateTestStatistic();
+            makeKSDStatisticsPart1();
+            makeKSDStatisticsPart2();
+            makeKSDAndZ();
+            makePTerm1();
+            makePTerm2();
+            makePTerm3();
+            makeKSDZAndP();
+            makeKSDZAndPWithNames();
+            makeStatisticsSummary();
+        }
+        private void calculateTestStatistic()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -353,7 +413,7 @@ namespace MC
             };
         }
 
-        internal void makeKSDStatisticsPart1()
+        private void makeKSDStatisticsPart1()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -375,7 +435,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makeKSDStatisticsPart2()
+        
+        private void makeKSDStatisticsPart2()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -400,8 +461,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-
-        internal void makeKSDAndZ()
+        
+        private void makeKSDAndZ()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -424,7 +485,7 @@ namespace MC
             };
         }
 
-        internal void makePTerm1()
+        private void makePTerm1()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -447,7 +508,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makePTerm2()
+        
+        private void makePTerm2()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -471,7 +533,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makePTerm3()
+        
+        private void makePTerm3()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -496,7 +559,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makeKSDZAndP()
+        
+        private void makeKSDZAndP()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -522,7 +586,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makeKSDZAndPWithNames()
+        
+        private void makeKSDZAndPWithNames()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -548,7 +613,8 @@ namespace MC
                 Console.ReadLine();
             };
         }
-        internal void makeStatisticsSummary()
+        
+        private void makeStatisticsSummary()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -575,6 +641,7 @@ namespace MC
                 Console.ReadLine();
             };
         }
+        
         internal void processParameterData()
         { 
             try { localConnection.Open(); }
@@ -595,8 +662,16 @@ namespace MC
             };
         }
 
-
-        internal void populatetmpMinID()
+        internal void calculateCorrelations()
+        {
+            populatetmpMinID();
+            updateRankID();
+            createtmpAverageParameterValueTable();
+            createtmpCorrelationPrecursorTables();
+            createtmpCorrelationPrecursors();
+        }
+        
+        private void populatetmpMinID()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -621,7 +696,7 @@ namespace MC
         /// <summary>
         /// Updating ranks using a correlated subquery needs to be split into two separate queries
         /// </summary>
-        internal void updateRankID()
+        private void updateRankID()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
@@ -646,7 +721,59 @@ namespace MC
             };
         }
 
-        
+        private void createtmpAverageParameterValueTable()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE tmpAverageParameterValue AS " +
+                    "SELECT ParID, Avg(ParameterValue) AS AvgOfParameterValue " +
+                    "FROM SortedParameters " +
+                    "GROUP BY ParID"
+                );
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create temporary table for average parameter values");
+                Console.ReadLine();
+            };
+        }
+
+
+        private void createtmpCorrelationPrecursors()
+        {
+            try { localConnection.Open(); }
+            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE tmp235 AS " +
+                    "SELECT ParX, ParY, " +
+                    "X, Y, " +
+                    "RX, RY, " +
+                    "tmpX.AvgOfParameterValue AS AvgX, " +
+                    "tmpY.AvgOfParameterValue AS AvgY " +
+                    "FROM (tmpCorrelationPrecursor INNER JOIN tmpAverageParameterValue As tmpX " +
+                    "ON tmpCorrelationPrecursor.ParX = tmpX.ParID) INNER JOIN tmpAverageParameterValue As tmpY " +
+                    "ON tmpCorrelationPrecursor.ParY = tmpY.ParID)" //235
+                );
+                /*executeSQLCommand();    //236
+                executeSQLCommand();    //237
+                executeSQLCommand();    //238
+                executeSQLCommand();    //239
+                */
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create temporary tables for correlation precursors");
+                Console.ReadLine();
+            };
+        }
+
         internal void createParameterSensitivitySummaryTable()
         {
             try { localConnection.Open(); }

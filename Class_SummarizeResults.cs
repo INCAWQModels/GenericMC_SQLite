@@ -123,12 +123,6 @@ namespace MC
             //identify sampled parameters
             rd.processParameterData();
 
-            //set temp min IDs
-            rd.populatetmpMinID();
-
-            //update tank IDs
-            rd.updateRankID();
-
             //set up the background for calculating KS statistics
             rd.createTableParameterIDRanges();
 
@@ -139,20 +133,10 @@ namespace MC
             rd.calculateObservedAndTheoreticalOffsets();
 
             //get test statistic for KS
-            rd.calculateTestStatistic();
+            rd.calculateKSStatistics();
 
-            rd.makeKSDStatisticsPart1();
-            rd.makeKSDStatisticsPart2();
-
-            rd.makeKSDAndZ();
-
-            rd.makePTerm1();
-            rd.makePTerm2();
-            rd.makePTerm3();
-
-            rd.makeKSDZAndP();
-            rd.makeKSDZAndPWithNames();
-            rd.makeStatisticsSummary();
+            //caluclat ePearson and Spearman correlations
+            rd.calculateCorrelations();
 
             //write the results
             //rd.writeResults();

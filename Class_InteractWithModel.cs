@@ -317,7 +317,7 @@ namespace MC
                         {
                             switch (MCParameters.model)
                             {
-                                //should be able t ocalculate KGE for any version of PERSiST
+                                //should be able to calculate KGE for any version of PERSiST
                                 case 1:     //running PERSiST 1.4
                                 case 8:     //running PERSiST 1.6
                                     //performanceStatistic += MCParameters.seriesWeights[i] * MCParameters.coefficientsWeights[1] * ReturnR2(values[1]);
@@ -815,6 +815,9 @@ namespace MC
             }
         }
 
+        /// <summary>
+        /// Get the number of chains to run in the MC analysis
+        /// </summary>
         public static void SetRunMCParameters()
         {
             string r;
