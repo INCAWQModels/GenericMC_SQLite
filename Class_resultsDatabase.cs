@@ -66,6 +66,7 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpAverageParameterValue");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp235");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -738,7 +739,7 @@ namespace MC
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
-                executeSQLCommand("CREATE TABLE tmpAverageParameterValue AS " +
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmpAverageParameterValue AS " +
                     "SELECT ParID, Avg(ParameterValue) AS AvgOfParameterValue " +
                     "FROM SortedParameters " +
                     "GROUP BY ParID"
@@ -755,21 +756,28 @@ namespace MC
 
         private void createtmpCorrelationPrecursors()
         {
+            /*Console.Write("Connection state : " +localConnection.State.ToString() +"\n");
             try { localConnection.Open(); }
-            catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
+            catch (SQLiteException ex) { 
+                Console.WriteLine(ex.Message);
+                localConnection.Close();
+                Console.WriteLine("Should be closed : ", localConnection.State.ToString());
+                localConnection.Open();
+            }
+            */
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
-                executeSQLCommand("CREATE TABLE tmp235 AS " +
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmp235 AS " +
                     "SELECT ParX, ParY, " +
                     "X, Y, " +
                     "RX, RY, " +
                     "tmpX.AvgOfParameterValue AS AvgX, " +
                     "tmpY.AvgOfParameterValue AS AvgY " +
-                    "FROM (tmpCorrelationPrecursor INNER JOIN tmpAverageParameterValue As tmpX " +
-                    "ON tmpCorrelationPrecursor.ParX = tmpX.ParID) INNER JOIN tmpAverageParameterValue As tmpY " +
-                    "ON tmpCorrelationPrecursor.ParY = tmpY.ParID)" //235
-                );
+                    "FROM tmpCorrelationPrecursor, tmpAverageParameterValue As tmpX, tmpAverageParameterValue AS tmpY " +
+                    "WHERE tmpCorrelationPrecursor.ParX = tmpX.ParID AND " +
+                    "tmpCorrelationPrecursor.ParY = tmpY.ParID" 
+                ); //235
                 /*executeSQLCommand();    //236
                 executeSQLCommand();    //237
                 executeSQLCommand();    //238
