@@ -263,7 +263,7 @@ namespace MC
             }
             else
             {
-                Console.WriteLine("Could not create temproary correlation precursor tables");
+                Console.WriteLine("Could not create temporary correlation precursor tables");
             }
         }
 
@@ -838,12 +838,13 @@ namespace MC
                     "r, r * r AS R2, " +
                     "1.0 - ((1.0*SpearmanTop) / (1.0*SpearmanBottom)) AS Spearman " +
                     "FROM tmp239");
+               
                 executeSQLCommand("CREATE TABLE IF NOT EXISTS correlationsWithParNames AS " +
                     "SELECT X.ParName AS ParNameX, " +
                         "Y.ParName AS ParNameY, " +
-                        "ParX, ParY," +
+                        "ParX, ParY, " +
                         "r, R2, Spearman " +
-                    "FROM ParNames AS X, ParNames AS Y, correlations" +
+                    "FROM ParNames AS X, ParNames AS Y, correlations " +
                     "WHERE Y.ParID = ParY " +
                     "AND X.ParID = ParX");
                 localConnection.Close();
@@ -1265,6 +1266,7 @@ namespace MC
         //this is really slow, needs to be refactored before it can be useful
         private void writePERSiSTResultsToDatabase()
         {
+            Console.WriteLine("Writing results to database");
             for (var i = 0; i < MCParameters.splitsToUse; i++)
             {
                 string fileName = MCParameters.resultFileNameStub + i.ToString() + ".txt";
@@ -1304,9 +1306,11 @@ namespace MC
                         try { tmp.ExecuteNonQuery(); }
                         catch (Exception ex) { Console.WriteLine(ex.Message); }
                         tmp.Dispose();
+                        Console.Write(".");
                     }
                 }
             }
+            Console.WriteLine("Results written");
         }
 
         private void writePERSiSTResults()

@@ -139,10 +139,10 @@ namespace MC
             rd.calculateCorrelations();
 
             //write the results
-            //rd.writeResults();
+            rd.writeResults();
 
             //clean up temporary tables
-            //rd.cleanUpTemporaryTables();
+            rd.cleanUpTemporaryTables();
         }
 
         static void getNumberOfRunsToOrganize()
