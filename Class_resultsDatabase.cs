@@ -67,6 +67,12 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpAverageParameterValue");
                 executeSQLCommand("DROP TABLE IF EXISTS tmp235");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp236");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp237");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp238");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp239");
+                executeSQLCommand("DROP TABLE IF EXISTS correlations");
+                executeSQLCommand("DROP TABLE IF EXISTS correlationsWithParNames");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not clean up database"); };
@@ -101,6 +107,11 @@ namespace MC
                 executeSQLCommand("DROP TABLE IF EXISTS tmpSortedParametersForCorrelations");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpCorrelationPrecursor");
                 executeSQLCommand("DROP TABLE IF EXISTS tmpAverageParameterValue");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp235");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp236");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp237");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp238");
+                executeSQLCommand("DROP TABLE IF EXISTS tmp239");
                 localConnection.Close();
             }
             else { Console.WriteLine("Could not remove temporary tables"); };
@@ -200,7 +211,7 @@ namespace MC
             //assume we only get here if the connection state is open
             using var cmd = new SQLiteCommand(localConnection)
             {
-                CommandText = "CREATE TABLE IF NOT EXISTS createtmpSortedParametersForCorrelationsTable " +
+                CommandText = "CREATE TABLE IF NOT EXISTS tmpSortedParametersForCorrelationsTable " +
                 "(ID INTEGER PRIMARY KEY ASC, " +
                 "ParID INTEGER, " +
                 "RunID INTEGER, " +
@@ -680,6 +691,7 @@ namespace MC
             createtmpAverageParameterValueTable();
             createtmpCorrelationPrecursorTables();
             createtmpCorrelationPrecursors();
+            createCorrelationTables();
         }
         
         private void populatetmpMinID()
@@ -756,15 +768,6 @@ namespace MC
 
         private void createtmpCorrelationPrecursors()
         {
-            /*Console.Write("Connection state : " +localConnection.State.ToString() +"\n");
-            try { localConnection.Open(); }
-            catch (SQLiteException ex) { 
-                Console.WriteLine(ex.Message);
-                localConnection.Close();
-                Console.WriteLine("Should be closed : ", localConnection.State.ToString());
-                localConnection.Open();
-            }
-            */
             //only try to clean up if the connection is open
             if (localConnection.State == ConnectionState.Open)
             {
@@ -778,11 +781,42 @@ namespace MC
                     "WHERE tmpCorrelationPrecursor.ParX = tmpX.ParID AND " +
                     "tmpCorrelationPrecursor.ParY = tmpY.ParID" 
                 ); //235
-                /*executeSQLCommand();    //236
-                executeSQLCommand();    //237
-                executeSQLCommand();    //238
-                executeSQLCommand();    //239
-                */
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmp236 AS " +
+                    "SELECT ParX, ParY, " +
+                    "X, Y, " +
+                    "RX, RY, " +
+                    "AvgX, AvgY, " +
+                    "X  -AvgX AS XMinusXBar, " +
+                    "Y - AvgY AS YMinusYBar, " +
+                    "RX -RY AS RXMinusRY " +
+                    "FROM tmp235");    //236
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmp237 AS " +
+                    "SELECT ParX, ParY, " +
+                    "X, Y, " +
+                    "RX, RY, " +
+                    "AvgX, AvgY, " +
+                    "XMinusXBar, YMinusYBar, " +
+                    "RXMinusRY, " +
+                    "XMinusXBar * YMinusYBar AS XMinusXBarYMinusYBar, " +
+                    "XMinusXBar * XMinusXBar AS XMinusXBar2, " +
+                    "YMinusYBar * YMinusYBar AS YMinusYBar2, " +
+                    "RXMinusRY * RXMinusRY AS RXMinusRY2 " +
+                    "FROM tmp236");    //237
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmp238 AS " +
+                    "SELECT ParX, ParY, " +
+                    "SUM(XMinusXBarYMinusYBar) AS SumOfXMinusXBarYMinusYBar, " +
+                    "SUM(XMinusXBar2) AS SumOfXMinusXBar2, " +
+                    "SUM(YMinusYBar2) AS SumOfYMinusYBar2, " +
+                    "SUM(RXMinusRY2) AS SumOfRXMinusRY2, " +
+                    "Max(RX)+1 AS n " +
+                    "FROM tmp237 " +
+                    "GROUP BY ParX, ParY" );    //238
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS tmp239 AS " +
+                    "SELECT ParX, ParY, " +
+                    "SumOfXMinusXBarYMinusYBar / (SQRT(SumOfXMinusXBar2 * SumOfYMinusYBar2)) AS r, " +
+                    "6 * SumOfRXMinusRY2 AS SpearmanTop, " +
+                    "n*(n * n - 1) AS SpearmanBottom " +
+                    "FROM tmp238");    //239
                 localConnection.Close();
             }
             else
@@ -792,16 +826,33 @@ namespace MC
             };
         }
 
-        internal void createParameterSensitivitySummaryTable()
+        private void createCorrelationTables()
         {
             try { localConnection.Open(); }
             catch (SQLiteException ex) { Console.WriteLine(ex.Message); }
-
-            string SQLstring = "SELECT[116 Statistics Summary].ParName, [116 Statistics Summary].ParID, [116 Statistics Summary].D, " +
-                " [116 Statistics Summary].MinOfNumericValue, [116 Statistics Summary].MaxOfNumericValue, [116 Statistics Summary].xRange, " +
-                " [116 Statistics Summary].z, [116 Statistics Summary].p INTO ParameterSensitivitySummary FROM [116 Statistics Summary]";
-            executeSQLCommand(SQLstring);
-            localConnection.Close();
+            //only try to clean up if the connection is open
+            if (localConnection.State == ConnectionState.Open)
+            {
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS correlations AS " +
+                    "SELECT ParX, ParY, " +
+                    "r, r * r AS R2, " +
+                    "1.0 - ((1.0*SpearmanTop) / (1.0*SpearmanBottom)) AS Spearman " +
+                    "FROM tmp239");
+                executeSQLCommand("CREATE TABLE IF NOT EXISTS correlationsWithParNames AS " +
+                    "SELECT X.ParName AS ParNameX, " +
+                        "Y.ParName AS ParNameY, " +
+                        "ParX, ParY," +
+                        "r, R2, Spearman " +
+                    "FROM ParNames AS X, ParNames AS Y, correlations" +
+                    "WHERE Y.ParID = ParY " +
+                    "AND X.ParID = ParX");
+                localConnection.Close();
+            }
+            else
+            {
+                Console.WriteLine("Could not create correlations tables");
+                Console.ReadLine();
+            };
         }
 
         private void notYetImplemented()
